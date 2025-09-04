@@ -403,7 +403,12 @@
             sinceBreak += 1; const level = Math.min(4, sinceBreak);
             c.style.background = shadeForStreak(h.color, state.ui.theme, level);
           } else if(eff==='skipped'){
-            // streak continues
+            // streak continues; visually carry Friday's shade across weekend when auto-skip is enabled
+            if(h.autoSkipWeekends && weekend && sinceBreak > 0){
+              const level = Math.min(4, sinceBreak);
+              c.style.background = shadeForStreak(h.color, state.ui.theme, level);
+            }
+            // do not change sinceBreak
           } else if((eff==='failed') || (eff==='pending' && d < today)){
             sinceBreak = 0;
           }
