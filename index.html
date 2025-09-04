@@ -14,15 +14,14 @@
       --text: #0f172a;
       --muted: #64748b;
       --accent: #6b8cff; /* for generic buttons */
-      --grid-gap: 8px;
+      --grid-gap: 6px;
       --radius: 12px;
       --shadow: 0 10px 26px rgba(2,6,23,0.08);
 
-      /* state colors */
-      --done: #22c55e;   /* green */
-      --failed: #ef4444; /* red */
-      --skipped: #cbd5e1;/* slate-300 */
-      --pending: #e9edf6;/* pale */
+      /* state base (fallbacks) */
+      --failed: #ef4444;
+      --skipped: #cbd5e1;
+      --pending: #e9edf6;
 
       --sticky: #f3f6ff;
       --cell-size: 28px;
@@ -33,7 +32,6 @@
       --panel-2: #191b34;
       --text: #e9ecf6;
       --muted: #a7adcf;
-      --done: #2dd4bf;
       --failed: #ef4444;
       --skipped: #475569;
       --pending: #2a2d4f;
@@ -43,7 +41,7 @@
 
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{ margin:0; background:var(--bg); color:var(--text); font:14px/1.45 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji" }
+    body{ margin:0; background:var(--bg); color:var(--text); font:14px/1.45 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji"; overflow-x:hidden }
 
     .wrap{ max-width: 1400px; margin:0 auto; padding:16px; display:flex; flex-direction:column; gap:12px }
 
@@ -59,27 +57,26 @@
     .muted{ color: var(--muted) }
 
     /* Chain grid */
-    .chain-shell{ overflow-x:auto; overflow-y:visible; padding:10px; }
-    .chain{ display:grid; grid-auto-rows: max-content; gap:8px }
+    .chain-shell{ overflow-x:hidden; overflow-y:visible; padding:8px; }
+    .chain{ display:grid; grid-auto-rows: max-content; row-gap:4px; column-gap:8px }
     .sticky-col{ position:sticky; left:0; z-index:2; background: var(--sticky); border-right:1px solid rgba(2,6,23,0.06) }
 
     .head{ display:grid; align-items:end; gap: var(--grid-gap); }
-    .head .label{ position:sticky; left:0; padding:10px 12px; border-radius:12px; background: var(--sticky); font-weight:700; z-index:3; }
+    .head .label{ position:sticky; left:0; padding:8px 12px; border-radius:12px; background: var(--sticky); font-weight:700; z-index:3; }
 
     .dates{ display:grid; gap: var(--grid-gap); }
-    .date-cell{ width: var(--cell-size); height: 20px; text-align:center; font-size:11px; color: var(--muted) }
+    .date-cell{ width: var(--cell-size); height: 18px; text-align:center; font-size:11px; color: var(--muted) }
     .date-cell.today{ font-weight:800 }
 
     .row{ display:grid; gap: var(--grid-gap); align-items:center }
-    .habit-sticky{ display:grid; grid-template-columns: 12px minmax(80px, 1fr) max-content max-content auto; align-items:center; column-gap:10px; padding:8px 12px; border-radius:12px; box-shadow: inset 0 0 0 1px rgba(2,6,23,0.06); overflow:hidden }
-    .swatch{ width:12px; height:12px; border-radius:4px; border:1px solid rgba(0,0,0,0.15) }
+    .habit-sticky{ display:grid; grid-template-columns: 10px minmax(110px, 1fr) max-content max-content auto; align-items:center; column-gap:10px; padding:6px 10px; border-radius:12px; box-shadow: inset 0 0 0 1px rgba(2,6,23,0.06); overflow:hidden }
+    .swatch{ width:10px; height:10px; border-radius:4px; border:1px solid rgba(0,0,0,0.15) }
     .habit-name{ font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
     .tiny{ font-size:11px; color: var(--muted); white-space:nowrap }
 
     .cells{ display:grid; gap: var(--grid-gap); }
     .cell{ width: var(--cell-size); height: var(--cell-size); border-radius:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; border:1px solid rgba(2,6,23,0.06); transition: transform 120ms ease, box-shadow 120ms ease; background: var(--pending); }
     .cell:hover{ transform: translateY(-1px); box-shadow: 0 6px 14px rgba(2,6,23,0.15) }
-    .cell.state-done{ background: var(--done); color:#052e1a; border-color: rgba(0,0,0,0.1) }
     .cell.state-failed{ background: var(--failed); color:white; border-color: rgba(0,0,0,0.15) }
     .cell.state-skipped{ background: var(--skipped); color:#1f2937; border-color: rgba(0,0,0,0.1) }
 
@@ -97,9 +94,22 @@
     .footer{ padding:10px 12px; color: var(--muted); font-size:12px }
 
     @media (max-width: 780px){
-      .habit-sticky{ grid-template-columns: 12px 1fr auto; row-gap:6px }
+      .habit-sticky{ grid-template-columns: 10px 1fr auto; row-gap:6px }
       .tiny{ display:none }
     }
+
+    /* Modal */
+    .modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.45); display:grid; place-items:center; z-index:50 }
+    .modal{ width:min(520px, calc(100vw - 32px)); background:var(--panel); color:var(--text); border-radius:14px; border:1px solid rgba(2,6,23,0.08); box-shadow: var(--shadow); padding:14px }
+    .modal h3{ margin:0 0 8px 0 }
+    .form{ display:grid; gap:10px }
+    .form .row{ display:flex; gap:10px; align-items:center }
+    .form label{ color:var(--muted) }
+    input[type="text"], select{ padding:8px 10px; border-radius:10px; background:#fff; color:var(--text); border:1px solid rgba(2,6,23,0.12) }
+    html[data-theme="dark"] input[type="text"], html[data-theme="dark"] select{ background:#0d0f22; color:var(--text); border-color: rgba(255,255,255,0.14) }
+    .modal-actions{ display:flex; gap:8px; justify-content:flex-end; margin-top:8px }
+    .btn.danger{ border-color:#ef4444; color:#ef4444 }
+    .btn.danger:hover{ background:#fee2e2 }
   </style>
 </head>
 <body>
@@ -112,13 +122,10 @@
         <input id="importAll" type="file" accept="application/json" hidden />
       </div>
       <div class="seg">
-        <span class="muted">Range:</span>
-        <button data-range="30" class="btn range">30d</button>
-        <button data-range="60" class="btn range">60d</button>
-        <button data-range="90" class="btn range primary">90d</button>
-        <button data-range="180" class="btn range">180d</button>
-        <button data-range="365" class="btn range">365d</button>
-        <button id="jumpToday" class="btn">Today</button>
+        <button id="prevDay" class="btn" title="Previous day (Shift = 7 days)">◀</button>
+        <button id="nextDay" class="btn" title="Next day (Shift = 7 days)">▶</button>
+        <button id="todayBtn" class="btn">Today</button>
+        <span class="muted">Window: 15d</span>
         <button id="themeToggle" class="btn">Light ↔ Dark</button>
       </div>
     </header>
@@ -142,16 +149,13 @@
     function rgbToHex(r,g,b){ return '#'+[r,g,b].map(x=> x.toString(16).padStart(2,'0')).join(''); }
     function mix(hex1, hex2, w){ const a=hexToRgb(hex1), b=hexToRgb(hex2); const r=Math.round(a.r*(1-w)+b.r*w), g=Math.round(a.g*(1-w)+b.g*w), b2=Math.round(a.b*(1-w)+b.b*w); return rgbToHex(r,g,b2); }
 
-    // Streak shading palette for 'done'
-    const BASE_DONE = '#22c55e';
-    const BG_LIGHT = '#ffffff';
-    const BG_DARK = '#0f1020';
-    function shadeForStreak(level, theme){ // level 1..4
+    function shadeForStreak(baseHex, theme, level){ // level 1..4
+      // weights closer to bg for low levels → appears lighter; decrease weight for darker as streak grows
       const wl = [0.82, 0.62, 0.42, 0.18];
-      const wd = [0.45, 0.30, 0.18, 0.05];
+      const wd = [0.55, 0.40, 0.28, 0.12];
       const w = (theme==='dark'? wd : wl)[Math.max(0, Math.min(3, level-1))];
-      const bg = theme==='dark'? BG_DARK : BG_LIGHT;
-      return mix(BASE_DONE, bg, w);
+      const bg = theme==='dark'? '#0f1020' : '#ffffff';
+      return mix(baseHex, bg, w);
     }
 
     // ===== Storage =====
@@ -162,14 +166,15 @@
     // ===== Default State =====
     const today = startOfDay(new Date());
     const defaultState = {
-      selectedHabitId: null, // retained for compatibility
+      selectedHabitId: null,
       habits: [ { id: crypto.randomUUID(), name: 'Daily Focus', color:'#6b8cff', createdAt: fmt(today), autoSkipWeekends: true, entries: {} } ],
-      ui: { chainDays: 90, theme: 'light' }
+      ui: { windowDays: 15, windowEndISO: fmt(today), theme: 'light' }
     };
 
     let state = load() || defaultState;
-    if(!state.ui) state.ui = { chainDays: 90, theme: 'light' };
-    if(!('chainDays' in state.ui)) state.ui.chainDays = 90;
+    if(!state.ui) state.ui = { windowDays: 15, windowEndISO: fmt(today), theme: 'light' };
+    if(!('windowDays' in state.ui)) state.ui.windowDays = 15;
+    if(!('windowEndISO' in state.ui)) state.ui.windowEndISO = fmt(today);
     if(!('theme' in state.ui)) state.ui.theme = 'light';
 
     document.documentElement.setAttribute('data-theme', state.ui.theme);
@@ -180,9 +185,11 @@
     const elExport = document.getElementById('exportAll');
     const elImport = document.getElementById('importAll');
     const elTheme = document.getElementById('themeToggle');
-    const elJump = document.getElementById('jumpToday');
 
-    const rangeBtns = Array.from(document.querySelectorAll('.btn.range'));
+    // Window nav
+    const elPrev = document.getElementById('prevDay');
+    const elNext = document.getElementById('nextDay');
+    const elToday = document.getElementById('todayBtn');
 
     // ===== Habit helpers =====
     function currentHabits(){ return state.habits; }
@@ -224,23 +231,94 @@
       el.onclick = ()=>{ cycle(h, fmt(today), isWeekend(today)); render(); };
     }
 
+    // ===== Window helpers =====
+    function getWindowDates(){
+      const end = parse(state.ui.windowEndISO);
+      const n = state.ui.windowDays;
+      return Array.from({length:n}, (_,i)=> addDays(end, -(n-1-i)) );
+    }
+    function shiftWindow(deltaDays){
+      const end = parse(state.ui.windowEndISO);
+      state.ui.windowEndISO = fmt(addDays(end, deltaDays));
+      save(state); render();
+    }
+
+    // ===== Modal =====
+    function openHabitModal(h){
+      const overlay = document.createElement('div'); overlay.className='modal-overlay'; overlay.tabIndex = -1;
+      const modal = document.createElement('div'); modal.className='modal';
+      modal.innerHTML = `
+        <h3>Edit Habit</h3>
+        <div class="form">
+          <div class="row">
+            <label style="min-width:90px">Name</label>
+            <input id="m_name" type="text" value="${h.name.replace(/"/g,'&quot;')}" />
+          </div>
+          <div class="row">
+            <label style="min-width:90px">Color</label>
+            <select id="m_color">
+              <option value="#6b8cff">Blue</option>
+              <option value="#22d3ee">Cyan</option>
+              <option value="#22c55e">Green</option>
+              <option value="#a3e635">Lime</option>
+              <option value="#f59e0b">Amber</option>
+              <option value="#f472b6">Pink</option>
+              <option value="#ef4444">Red</option>
+              <option value="#a78bfa">Violet</option>
+            </select>
+          </div>
+          <div class="row">
+            <label style="min-width:90px">Options</label>
+            <label><input id="m_skip" type="checkbox" ${h.autoSkipWeekends?'checked':''}/> Auto‑skip weekends</label>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button id="m_delete" class="btn danger">Delete</button>
+          <span style="flex:1"></span>
+          <button id="m_cancel" class="btn">Cancel</button>
+          <button id="m_save" class="btn primary">Save</button>
+        </div>`;
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
+
+      const nameI = modal.querySelector('#m_name');
+      const colorI = modal.querySelector('#m_color'); colorI.value = h.color;
+      const skipI = modal.querySelector('#m_skip');
+
+      function close(){ overlay.remove(); }
+      overlay.addEventListener('click', (e)=>{ if(e.target===overlay) close(); });
+      document.addEventListener('keydown', function esc(e){ if(e.key==='Escape'){ close(); document.removeEventListener('keydown', esc); } });
+
+      modal.querySelector('#m_cancel').onclick = close;
+      modal.querySelector('#m_save').onclick = ()=>{
+        h.name = nameI.value.trim()||'Untitled';
+        h.color = colorI.value;
+        h.autoSkipWeekends = !!skipI.checked;
+        save(state); close(); render();
+      };
+      modal.querySelector('#m_delete').onclick = ()=>{ close(); deleteHabit(h.id); };
+
+      // focus
+      setTimeout(()=> nameI.focus(), 0);
+    }
+
     // ===== Render Chain =====
     function render(){
       document.documentElement.setAttribute('data-theme', state.ui.theme);
-      // Header — date range
-      const n = state.ui.chainDays;
-      const dates = Array.from({length:n}, (_,i)=> addDays(today, -(n-1-i)) );
+
+      // Dates for current window
+      const dates = getWindowDates();
 
       // Grid columns: sticky + n cells
-      const stickyW = 320; // wider to avoid overlap with first cell
-      const gridCols = `${stickyW}px repeat(${n}, var(--cell-size))`;
+      const stickyW = 300; // compact to reduce gap & avoid overlap
+      const gridCols = `${stickyW}px repeat(${dates.length}, var(--cell-size))`;
 
       elChain.innerHTML='';
 
       // Head row
       const head = document.createElement('div'); head.className='head'; head.style.gridTemplateColumns = gridCols;
       const label = document.createElement('div'); label.className='label sticky-col'; label.textContent='Habits'; head.appendChild(label);
-      const datesWrap = document.createElement('div'); datesWrap.className='dates'; datesWrap.style.gridTemplateColumns = `repeat(${n}, var(--cell-size))`;
+      const datesWrap = document.createElement('div'); datesWrap.className='dates'; datesWrap.style.gridTemplateColumns = `repeat(${dates.length}, var(--cell-size))`;
       dates.forEach(d=>{
         const dc = document.createElement('div'); dc.className='date-cell';
         const isT = fmt(d)===fmt(today);
@@ -252,37 +330,37 @@
       head.appendChild(datesWrap);
       elChain.appendChild(head);
 
-      // Habit rows
+      // Habit rows (tight vertical spacing via row-gap:4px set above)
       for(const h of currentHabits()){
         const row = document.createElement('div'); row.className='row'; row.style.gridTemplateColumns = gridCols;
 
         // sticky cell
         const sticky = document.createElement('div'); sticky.className='habit-sticky sticky-col';
         const sw = document.createElement('div'); sw.className='swatch'; sw.style.background = h.color; sticky.appendChild(sw);
-        const name = document.createElement('div'); name.className='habit-name'; name.textContent = h.name; sticky.appendChild(name);
+        const name = document.createElement('div'); name.className='habit-name'; name.textContent = h.name; name.title=h.name; name.onclick=()=> openHabitModal(h); sticky.appendChild(name);
         const todayPill = document.createElement('span'); todayPill.className='pill'; updateTodayPill(todayPill, h); sticky.appendChild(todayPill);
         const st = stats(h);
         const tiny = document.createElement('div'); tiny.className='tiny'; tiny.textContent = `🔥 ${st.current}  •  ⭐ ${st.longest}  •  ✓ ${st.total}`; sticky.appendChild(tiny);
         const menu = document.createElement('button'); menu.className='btn'; menu.style.marginLeft='auto'; menu.textContent='⋯';
-        menu.onclick = ()=> row.classList.toggle('open');
+        menu.onclick = ()=> openHabitModal(h);
         sticky.appendChild(menu);
         row.appendChild(sticky);
 
         // cells
-        const cells = document.createElement('div'); cells.className='cells'; cells.style.gridTemplateColumns = `repeat(${n}, var(--cell-size))`;
-        let sinceBreak = 0; // counts done cells since last break (failed/past-pending). Skips don't reset.
+        const cells = document.createElement('div'); cells.className='cells'; cells.style.gridTemplateColumns = `repeat(${dates.length}, var(--cell-size))`;
+        let sinceBreak = 0; // counts done cells since last break
         dates.forEach(d=>{
           const k = fmt(d); const weekend=isWeekend(d);
           const c = document.createElement('div'); c.className='cell';
           const eff = effective(h,d);
           c.classList.add('state-'+eff);
 
-          // streak shading for DONE cells
+          // Color tint = habit color, darker as streak grows
           if(eff==='done'){
             sinceBreak += 1; const level = Math.min(4, sinceBreak);
-            c.style.background = shadeForStreak(level, state.ui.theme);
+            c.style.background = shadeForStreak(h.color, state.ui.theme, level);
           } else if(eff==='skipped'){
-            // do nothing, streak continues
+            // streak continues
           } else if((eff==='failed') || (eff==='pending' && d < today)){
             sinceBreak = 0;
           }
@@ -296,53 +374,8 @@
         });
         row.appendChild(cells);
 
-        // inline editor
-        const edit = document.createElement('div'); edit.className='edit';
-        const form = document.createElement('div'); form.className='form';
-
-        // name
-        const nameI = document.createElement('input'); nameI.type='text'; nameI.value=h.name; nameI.placeholder='Habit name';
-        nameI.onchange = ()=>{ h.name = nameI.value.trim()||'Untitled'; save(state); render(); };
-        form.appendChild(nameI);
-
-        // color
-        const sel = document.createElement('select'); sel.innerHTML = `
-          <option value="#6b8cff">Blue</option>
-          <option value="#22d3ee">Cyan</option>
-          <option value="#22c55e">Green</option>
-          <option value="#a3e635">Lime</option>
-          <option value="#f59e0b">Amber</option>
-          <option value="#f472b6">Pink</option>
-          <option value="#ef4444">Red</option>
-          <option value="#a78bfa">Violet</option>`;
-        sel.value = h.color; sel.onchange = ()=>{ h.color = sel.value; save(state); render(); };
-        form.appendChild(sel);
-
-        // auto-skip
-        const chk = document.createElement('input'); chk.type='checkbox'; chk.checked = !!h.autoSkipWeekends; chk.id = `auto_${h.id}`;
-        const lbl = document.createElement('label'); lbl.textContent='Auto-skip weekends'; lbl.htmlFor = chk.id; lbl.style.marginRight='8px';
-        chk.onchange = ()=>{ h.autoSkipWeekends = !!chk.checked; save(state); render(); };
-        form.appendChild(lbl); form.appendChild(chk);
-
-        // Today quick actions
-        const btnDone = document.createElement('button'); btnDone.className='btn'; btnDone.textContent='Today: Done'; btnDone.onclick=()=>{ setEntry(h, fmt(today), 'done'); render(); };
-        const btnFail = document.createElement('button'); btnFail.className='btn'; btnFail.textContent='Today: Failed'; btnFail.onclick=()=>{ setEntry(h, fmt(today), 'failed'); render(); };
-        const btnSkip = document.createElement('button'); btnSkip.className='btn'; btnSkip.textContent='Today: Skipped'; btnSkip.onclick=()=>{ setEntry(h, fmt(today), 'skipped'); render(); };
-        const btnClear = document.createElement('button'); btnClear.className='btn'; btnClear.textContent='Today: Clear'; btnClear.onclick=()=>{ setEntry(h, fmt(today), null); render(); };
-        form.appendChild(btnDone); form.appendChild(btnFail); form.appendChild(btnSkip); form.appendChild(btnClear);
-
-        // delete
-        const del = document.createElement('button'); del.className='btn'; del.textContent='Delete'; del.onclick = ()=> deleteHabit(h.id);
-        form.appendChild(del);
-
-        edit.appendChild(form);
-        row.appendChild(edit);
-
         elChain.appendChild(row);
       }
-
-      // highlight active range button
-      rangeBtns.forEach(b=> b.classList.toggle('primary', Number(b.dataset.range)===state.ui.chainDays));
     }
 
     // Helpers
@@ -356,23 +389,25 @@
     };
     document.getElementById('importAll').onchange = (e)=>{
       const f = e.target.files?.[0]; if(!f) return; const r = new FileReader();
-      r.onload = ()=>{ try{ state = JSON.parse(r.result); if(!state.ui) state.ui={chainDays:90, theme:'light'}; save(state); render(); alert('Imported.'); }catch{ alert('Invalid JSON'); } };
+      r.onload = ()=>{ try{ state = JSON.parse(r.result); if(!state.ui) state.ui={ windowDays: 15, windowEndISO: fmt(today), theme:'light'}; save(state); render(); alert('Imported.'); }catch{ alert('Invalid JSON'); } };
       r.readAsText(f);
     };
 
     document.getElementById('themeToggle').onclick = ()=>{ state.ui.theme = (state.ui.theme==='light'?'dark':'light'); save(state); render(); };
-    rangeBtns.forEach(b=> b.onclick = ()=>{ state.ui.chainDays = Number(b.dataset.range); save(state); render(); });
 
-    document.getElementById('jumpToday').onclick = ()=>{
-      const shell = document.querySelector('.chain-shell');
-      const todayCells = shell.querySelectorAll('.date-cell.today');
-      if(todayCells.length){ const rect = todayCells[0].getBoundingClientRect(); const shellRect = shell.getBoundingClientRect(); shell.scrollLeft += (rect.left - shellRect.left) - shellRect.width/2 + rect.width; }
-    };
+    document.getElementById('prevDay').onclick = (e)=> shiftWindow(e.shiftKey ? -7 : -1);
+    document.getElementById('nextDay').onclick = (e)=> shiftWindow(e.shiftKey ? +7 : +1);
+    document.getElementById('todayBtn').onclick = ()=>{ state.ui.windowEndISO = fmt(today); save(state); render(); };
+
+    // Keyboard: arrows to move window, D/F/S to set today status for all habits? (keep per-row clicks for clarity)
+    document.addEventListener('keydown', (e)=>{
+      if(['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+      if(e.key==='ArrowLeft') shiftWindow(e.shiftKey? -7 : -1);
+      if(e.key==='ArrowRight') shiftWindow(e.shiftKey? +7 : +1);
+    });
 
     // Initial render
     render();
-    // After first render, jump to today once
-    setTimeout(()=> document.getElementById('jumpToday').click(), 0);
   </script>
 </body>
 </html>
