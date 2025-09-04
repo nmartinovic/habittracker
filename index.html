@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Habit Tracker — Everyday‑style</title>
+  <link rel="icon" href="data:," />
+  <style>
+    :root{
+      --bg: #0f1020;               /* deep ink */
+      --panel: #14162b;            /* card bg */
+      --panel-2: #191b34;
+      --text: #e9ecf6;             /* primary text */
+      --muted: #a7adcf;            /* secondary */
+      --accent: #6b8cff;           /* brand-ish */
+      --grid-gap: 8px;             /* spacing between cells */
+      --radius: 14px;              /* card/cell rounding */
+      --shadow: 0 10px 30px rgba(0,0,0,0.35);
+
+      /* state colors (inspired by everyday.app tones) */
+      --done: #2dd4bf;   /* teal */
+      --failed: #ef4444; /* red */
+      --skipped: #475569;/* slate */
+      --pending: #2a2d4f;/* dim cell */
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--bg); color:var(--text); font: 14px/1.45 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    .app{
+      display:grid; grid-template-columns: 280px 1fr; gap: 16px; padding: 16px; max-width: 1300px; margin: 0 auto;
+    }
+    @media (max-width: 920px){
+      .app{grid-template-columns: 1fr}
+    }
+
+    .card{ background: linear-gradient(180deg, var(--panel), var(--panel-2)); border-radius: var(--radius); box-shadow: var(--shadow); border:1px solid rgba(255,255,255,0.06)}
+    .card h2, .card h3{ margin:0 0 8px 0; font-weight:700 }
+
+    /* Sidebar */
+    .sidebar{ padding:16px; position:sticky; top:16px; align-self:start }
+    .habits-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px }
+    .btn{ border:1px solid rgba(255,255,255,0.12); background:transparent; color:var(--text); padding:8px 10px; border-radius:10px; cursor:pointer }
+    .btn:hover{ border-color: rgba(255,255,255,0.25) }
+    .btn.primary{ background: var(--accent); border-color: var(--accent); color:white; box-shadow: 0 6px 18px rgba(107,140,255,0.35)}
+
+    .habit-list{ display:flex; flex-direction:column; gap:8px; }
+    .habit-item{ display:flex; gap:8px; align-items:center; padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); cursor:pointer }
+    .habit-item.active{ outline: 2px solid var(--accent)}
+    .swatch{ width:16px; height:16px; border-radius:6px; flex:0 0 16px; border:1px solid rgba(0,0,0,0.2) }
+    .habit-name{ font-weight:600 }
+    .habit-actions{ margin-top:12px; display:grid; grid-template-columns: 1fr 1fr; gap:8px }
+
+    .edit-panel{ margin-top:12px; padding-top:12px; border-top:1px dashed rgba(255,255,255,0.1); display:grid; gap:10px }
+    .row{ display:flex; gap:10px; align-items:center }
+    .row label{ color:var(--muted) }
+    input[type="text"], select{ width:100%; padding:8px 10px; border-radius:10px; background:#0d0f22; color:var(--text); border:1px solid rgba(255,255,255,0.1) }
+    input[type="checkbox"]{ transform: scale(1.25) }
+
+    .io{ display:flex; gap:8px; margin-top:10px }
+
+    /* Main */
+    .main{ padding:16px }
+    .toolbar{ display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between; align-items:center; margin-bottom:12px }
+    .month-nav{ display:flex; align-items:center; gap:8px }
+    .month-title{ font-weight:800; letter-spacing:0.3px }
+
+    .legend{ display:flex; gap:10px; align-items:center; color:var(--muted) }
+    .legend .dot{ width:10px; height:10px; border-radius:50%; display:inline-block }
+
+    .calendar{ display:grid; grid-template-columns: repeat(7, 1fr); gap: var(--grid-gap) }
+    .dow{ color: var(--muted); text-align:center; font-size: 12px; margin-bottom:6px }
+
+    .cell{
+      aspect-ratio: 1/1; border-radius: 12px; display:flex; align-items:center; justify-content:center; font-weight:700; position:relative; cursor:pointer; border:1px solid rgba(255,255,255,0.06);
+      background: var(--pending);
+      transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+    }
+    .cell:hover{ transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.35) }
+    .cell .date{ position:absolute; top:6px; left:6px; font-size:11px; font-weight:700; color: rgba(255,255,255,0.7) }
+
+    .state-done{ background: var(--done); color:#04221d; border-color: rgba(0,0,0,0.15) }
+    .state-failed{ background: var(--failed); color:white; border-color: rgba(0,0,0,0.2) }
+    .state-skipped{ background: var(--skipped); color:#cbd5e1; border-color: rgba(0,0,0,0.2) }
+    .state-pending{ background: var(--pending) }
+    .cell.inactive{ opacity:0.25; filter:grayscale(0.2) }
+
+    .quick{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px }
+
+    .stats{ display:grid; grid-template-columns: repeat(3, 1fr); gap:8px }
+    .stat{ padding:12px; background: rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:12px }
+    .stat .label{ color: var(--muted); font-size:12px }
+    .stat .value{ font-size:22px; font-weight:800 }
+
+    .footer{ margin-top:12px; color:var(--muted); font-size:12px }
+    .link{ color: var(--accent); text-decoration:none }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- SIDEBAR -->
+    <aside class="card sidebar">
+      <div class="habits-header">
+        <h2>Habits</h2>
+        <button id="addHabitBtn" class="btn">＋ New</button>
+      </div>
+      <div id="habitList" class="habit-list"></div>
+
+      <div class="edit-panel" id="editPanel" hidden>
+        <div class="row">
+          <label for="habitName">Name</label>
+          <input id="habitName" type="text" placeholder="e.g., Meditate" />
+        </div>
+        <div class="row">
+          <label for="habitColor">Color</label>
+          <select id="habitColor">
+            <option value="#6b8cff">Blue</option>
+            <option value="#22d3ee">Cyan</option>
+            <option value="#2dd4bf">Teal</option>
+            <option value="#a3e635">Lime</option>
+            <option value="#f59e0b">Amber</option>
+            <option value="#f472b6">Pink</option>
+            <option value="#ef4444">Red</option>
+            <option value="#a78bfa">Violet</option>
+          </select>
+        </div>
+        <div class="row">
+          <input id="autoSkip" type="checkbox" />
+          <label for="autoSkip">Automatically skip weekends</label>
+        </div>
+        <div class="habit-actions">
+          <button id="saveHabitBtn" class="btn primary">Save</button>
+          <button id="deleteHabitBtn" class="btn" title="Delete habit">Delete</button>
+        </div>
+        <div class="io">
+          <button id="exportBtn" class="btn" title="Download a backup JSON">Export</button>
+          <label class="btn" for="importInput" title="Restore from JSON">Import</label>
+          <input id="importInput" type="file" accept="application/json" hidden />
+        </div>
+      </div>
+      <div class="footer">Local‑only. No accounts. Data lives in your browser storage (localStorage).</div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="card main">
+      <div class="toolbar">
+        <div class="month-nav">
+          <button id="prevMonth" class="btn" aria-label="Previous month">◀</button>
+          <div class="month-title" id="monthTitle">Month YYYY</div>
+          <button id="nextMonth" class="btn" aria-label="Next month">▶</button>
+        </div>
+        <div class="legend">
+          <span class="dot" style="background:var(--done)"></span> Done
+          <span class="dot" style="background:var(--failed)"></span> Failed
+          <span class="dot" style="background:var(--skipped)"></span> Skipped
+        </div>
+      </div>
+
+      <div class="quick">
+        <button id="markDone" class="btn primary">Mark today Done</button>
+        <button id="markFailed" class="btn">Mark today Failed</button>
+        <button id="markSkipped" class="btn">Mark today Skipped</button>
+        <button id="clearToday" class="btn" title="Clear today status">Clear today</button>
+      </div>
+
+      <div id="dowRow" class="calendar" style="margin-bottom:6px"></div>
+      <div id="calendar" class="calendar"></div>
+
+      <div style="margin-top:16px">
+        <h3>Stats</h3>
+        <div class="stats">
+          <div class="stat"><div class="label">Current streak</div><div id="statCurrent" class="value">0</div></div>
+          <div class="stat"><div class="label">Longest streak</div><div id="statLongest" class="value">0</div></div>
+          <div class="stat"><div class="label">Total done</div><div id="statTotal" class="value">0</div></div>
+        </div>
+      </div>
+
+      <div class="footer" style="margin-top:18px">
+        Inspired by <a class="link" href="https://everyday.app" target="_blank" rel="noreferrer">everyday.app</a>. — Single‑user, GitHub Pages‑friendly.
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // ===== Utilities =====
+    const fmt = (d)=>{
+      const y = d.getFullYear();
+      const m = String(d.getMonth()+1).padStart(2,'0');
+      const day = String(d.getDate()).padStart(2,'0');
+      return `${y}-${m}-${day}`;
+    };
+    const parse = (yyyy_mm_dd)=>{
+      const [y,m,d] = yyyy_mm_dd.split('-').map(Number);
+      return new Date(y, m-1, d);
+    };
+    const startOfDay = (d)=> new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const addDays = (d, n)=> new Date(d.getFullYear(), d.getMonth(), d.getDate()+n);
+    const isWeekend = (d)=>{ const g = d.getDay(); return g===0 || g===6; }; // Sun=0, Sat=6
+    const frWeekStartIdx = 1; // Monday
+    const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+    // ===== Storage =====
+    const KEY = 'habitTracker_v1';
+    function load(){
+      try{ return JSON.parse(localStorage.getItem(KEY)) || null }catch{ return null }
+    }
+    function save(state){ localStorage.setItem(KEY, JSON.stringify(state)); }
+
+    // ===== Default State (first run) =====
+    const today = startOfDay(new Date());
+    const defaultState = {
+      selectedHabitId: null,
+      habits: [
+        { id: crypto.randomUUID(), name: 'Daily Focus', color: '#6b8cff', createdAt: fmt(today), autoSkipWeekends: true, entries: {} }
+      ],
+      ui: { year: today.getFullYear(), month: today.getMonth() } // 0-based month
+    };
+
+    let state = load() || defaultState;
+    if(!state.selectedHabitId && state.habits.length){ state.selectedHabitId = state.habits[0].id; save(state); }
+
+    // ===== Elements =====
+    const elHabitList = document.getElementById('habitList');
+    const elAddHabit = document.getElementById('addHabitBtn');
+    const elEditPanel = document.getElementById('editPanel');
+    const elHabitName = document.getElementById('habitName');
+    const elHabitColor = document.getElementById('habitColor');
+    const elAutoSkip = document.getElementById('autoSkip');
+    const elSaveHabit = document.getElementById('saveHabitBtn');
+    const elDeleteHabit = document.getElementById('deleteHabitBtn');
+    const elExport = document.getElementById('exportBtn');
+    const elImport = document.getElementById('importInput');
+
+    const elMonthTitle = document.getElementById('monthTitle');
+    const elPrevMonth = document.getElementById('prevMonth');
+    const elNextMonth = document.getElementById('nextMonth');
+    const elCalendar = document.getElementById('calendar');
+    const elDowRow = document.getElementById('dowRow');
+
+    const elMarkDone = document.getElementById('markDone');
+    const elMarkFailed = document.getElementById('markFailed');
+    const elMarkSkipped = document.getElementById('markSkipped');
+    const elClearToday = document.getElementById('clearToday');
+
+    const elStatCurrent = document.getElementById('statCurrent');
+    const elStatLongest = document.getElementById('statLongest');
+    const elStatTotal = document.getElementById('statTotal');
+
+    // DOW header (Mon..Sun)
+    function renderDOW(){
+      elDowRow.innerHTML = '';
+      for(const name of dayNames){
+        const div = document.createElement('div');
+        div.className = 'dow';
+        div.textContent = name;
+        elDowRow.appendChild(div);
+      }
+    }
+
+    // ===== Habit CRUD =====
+    function selectHabit(id){ state.selectedHabitId = id; save(state); renderAll(); }
+
+    function addHabit(){
+      const h = { id: crypto.randomUUID(), name: 'New Habit', color: '#22d3ee', createdAt: fmt(today), autoSkipWeekends: true, entries: {} };
+      state.habits.unshift(h);
+      state.selectedHabitId = h.id;
+      save(state); renderAll();
+    }
+
+    function deleteHabit(){
+      const id = state.selectedHabitId; if(!id) return;
+      if(!confirm('Delete this habit? This cannot be undone.')) return;
+      state.habits = state.habits.filter(h=>h.id!==id);
+      if(!state.habits.length){
+        state.selectedHabitId = null;
+      }else{
+        state.selectedHabitId = state.habits[0].id;
+      }
+      save(state); renderAll();
+    }
+
+    function updateHabitDetails(){
+      const h = currentHabit(); if(!h) return;
+      h.name = elHabitName.value.trim() || 'Untitled';
+      h.color = elHabitColor.value;
+      h.autoSkipWeekends = !!elAutoSkip.checked;
+      save(state); renderAll();
+    }
+
+    function currentHabit(){ return state.habits.find(h=>h.id===state.selectedHabitId) || null }
+
+    // ===== Calendar rendering =====
+    function renderCalendar(){
+      const y = state.ui.year, m = state.ui.month; // m = 0..11
+      const first = new Date(y, m, 1);
+      const monthName = first.toLocaleString(undefined, { month:'long' });
+      elMonthTitle.textContent = `${monthName} ${y}`;
+
+      // Compute grid days: start Monday, include leading/trailing days to fill weeks
+      const firstWeekday = (first.getDay()+6)%7; // Mon=0
+      const daysInMonth = new Date(y, m+1, 0).getDate();
+      const totalCells = Math.ceil((firstWeekday + daysInMonth) / 7) * 7;
+      const startDate = addDays(first, -firstWeekday);
+
+      const h = currentHabit();
+      const entries = h?.entries || {};
+      elCalendar.innerHTML = '';
+
+      for(let i=0;i<totalCells;i++){
+        const d = addDays(startDate, i);
+        const key = fmt(d);
+        const inMonth = d.getMonth()===m;
+        const div = document.createElement('div');
+        div.className = 'cell state-pending' + (inMonth ? '' : ' inactive');
+        div.dataset.date = key;
+
+        // dynamic accent ring for the active habit
+        if(h){ div.style.outlineOffset = '-2px'; div.style.outline = `1px solid ${hexToRgba(h.color, 0.35)}`; }
+
+        const dot = document.createElement('div');
+        dot.className = 'date';
+        dot.textContent = d.getDate();
+        div.appendChild(dot);
+
+        const weekend = isWeekend(d);
+        const val = entries[key];
+        const effective = (!val && weekend && h?.autoSkipWeekends) ? 'skipped' : (val||'pending');
+        applyStateClass(div, effective);
+        if(h && effective==='skipped' && weekend && !val){ div.title = 'Auto‑skipped (weekend)'; }
+
+        div.onclick = ()=>{
+          cycleDayState(h, key, weekend);
+          renderAll();
+        };
+        elCalendar.appendChild(div);
+      }
+    }
+
+    function applyStateClass(el, state){
+      el.classList.remove('state-done','state-failed','state-skipped','state-pending');
+      el.classList.add('state-'+state);
+      el.textContent = '';
+      const badge = document.createElement('div');
+      badge.className = 'date';
+      badge.textContent = new Date(el.dataset.date).getDate();
+      el.appendChild(badge);
+    }
+
+    function cycleDayState(h, key, weekend){
+      if(!h) return;
+      const cur = h.entries[key] || (weekend && h.autoSkipWeekends ? 'skipped' : 'pending');
+      const order = ['pending','done','failed','skipped'];
+      const idx = order.indexOf(cur);
+      const next = order[(idx+1)%order.length];
+      if(next==='pending'){
+        delete h.entries[key];
+      }else{
+        h.entries[key] = next;
+      }
+      save(state);
+    }
+
+    // ===== Mark today helpers =====
+    function setToday(v){ const h=currentHabit(); if(!h) return; const k=fmt(today); if(v) h.entries[k]=v; else delete h.entries[k]; save(state); renderAll(); }
+
+    // ===== Stats =====
+    function computeStats(){
+      const h = currentHabit();
+      if(!h){ elStatCurrent.textContent='0'; elStatLongest.textContent='0'; elStatTotal.textContent='0'; return; }
+      const start = parse(h.createdAt);
+      const end = today;
+      let cur = 0, best = 0, total = 0;
+      // iterate each day from start..end
+      for(let d=startOfDay(start); d<=end; d=addDays(d,1)){
+        const key = fmt(d);
+        const weekend = isWeekend(d);
+        const raw = h.entries[key];
+        const effective = (!raw && weekend && h.autoSkipWeekends) ? 'skipped' : (raw || 'pending');
+        if(effective==='done'){
+          cur += 1; total += 1; best = Math.max(best, cur);
+        }else if(effective==='skipped'){
+          // does not break streak
+        }else{
+          // pending or failed break streak only if day is before today
+          if(d < startOfDay(today)) cur = 0;
+        }
+      }
+      elStatCurrent.textContent = String(cur);
+      elStatLongest.textContent = String(best);
+      elStatTotal.textContent = String(total);
+    }
+
+    // ===== Rendering =====
+    function renderHabitList(){
+      elHabitList.innerHTML = '';
+      for(const h of state.habits){
+        const item = document.createElement('div');
+        item.className = 'habit-item' + (h.id===state.selectedHabitId ? ' active' : '');
+        item.onclick = ()=> selectHabit(h.id);
+        const sw = document.createElement('div'); sw.className='swatch'; sw.style.background = h.color; item.appendChild(sw);
+        const name = document.createElement('div'); name.className = 'habit-name'; name.textContent = h.name; item.appendChild(name);
+        elHabitList.appendChild(item);
+      }
+      const has = !!currentHabit();
+      elEditPanel.hidden = !has;
+      if(has){
+        const h = currentHabit();
+        elHabitName.value = h.name; elHabitColor.value = h.color; elAutoSkip.checked = !!h.autoSkipWeekends;
+      }
+    }
+
+    function renderAll(){
+      document.documentElement.style.setProperty('--accent', currentHabit()?.color || '#6b8cff');
+      renderHabitList();
+      renderDOW();
+      renderCalendar();
+      computeStats();
+    }
+
+    // ===== Export/Import =====
+    function download(filename, content){
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([content], {type:'application/json'}));
+      a.download = filename; a.click(); URL.revokeObjectURL(a.href);
+    }
+
+    // ===== Helpers =====
+    function hexToRgba(hex, alpha){
+      const m = hex.replace('#','');
+      const bigint = parseInt(m.length===3 ? m.split('').map(c=>c+c).join('') : m, 16);
+      const r = (bigint >> 16) & 255; const g = (bigint >> 8) & 255; const b = bigint & 255;
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    // ===== Events =====
+    elAddHabit.onclick = addHabit;
+    elSaveHabit.onclick = updateHabitDetails;
+    elDeleteHabit.onclick = deleteHabit;
+
+    elExport.onclick = ()=> download('habit-tracker-backup.json', JSON.stringify(state, null, 2));
+    elImport.onchange = (e)=>{
+      const file = e.target.files?.[0]; if(!file) return;
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        try{ const next = JSON.parse(reader.result); state = next; save(state); renderAll(); alert('Imported successfully.'); }catch(err){ alert('Invalid JSON'); }
+      };
+      reader.readAsText(file);
+    };
+
+    elPrevMonth.onclick = ()=>{ state.ui.month--; if(state.ui.month<0){ state.ui.month=11; state.ui.year--; } save(state); renderAll(); };
+    elNextMonth.onclick = ()=>{ state.ui.month++; if(state.ui.month>11){ state.ui.month=0; state.ui.year++; } save(state); renderAll(); };
+
+    elMarkDone.onclick = ()=> setToday('done');
+    elMarkFailed.onclick = ()=> setToday('failed');
+    elMarkSkipped.onclick = ()=> setToday('skipped');
+    elClearToday.onclick = ()=> setToday(null);
+
+    // Keyboard: D/F/S to mark today; arrows switch months
+    document.addEventListener('keydown', (e)=>{
+      if(['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+      if(e.key==='d' || e.key==='D') setToday('done');
+      if(e.key==='f' || e.key==='F') setToday('failed');
+      if(e.key==='s' || e.key==='S') setToday('skipped');
+      if(e.key==='ArrowLeft') elPrevMonth.click();
+      if(e.key==='ArrowRight') elNextMonth.click();
+    });
+
+    renderAll();
+  </script>
+</body>
+</html>
