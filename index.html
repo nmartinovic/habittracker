@@ -222,15 +222,30 @@
 
     // ===== Stats =====
     function stats(h){
-      const start = earliestConsideredDate(h);
-      const end = today;
-      let cur=0, best=0, total=0;
+      const keys = Object.keys(h.entries).sort();
+      const total = keys.reduce((acc,k)=> acc + (h.entries[k]==='done' ? 1 : 0), 0);
+      if(!keys.length){ return { current:0, longest:0, total:0 }; }
+
+      // Longest streak: sweep from first to last recorded day (independent of today)
+      const start = parse(keys[0]);
+      const end = parse(keys[keys.length-1]);
+      let best = 0, run = 0;
       for(let d=startOfDay(start); d<=end; d=addDays(d,1)){
         const v = effective(h,d);
-        if(v==='done'){ cur++; total++; if(cur>best) best=cur; }
-        else if(v==='skipped'){ /* keeps streak */ }
-        else { if(d<today) cur=0; }
+        if(v==='done'){ run++; if(run>best) best=run; }
+        else if(v==='skipped'){ /* streak continues */ }
+        else { run = 0; }
       }
+
+      // Current streak: walk backward from today until a break (pending/failed)
+      let cur = 0;
+      for(let d=startOfDay(today); d>=start; d=addDays(d,-1)){
+        const v = effective(h,d);
+        if(v==='done'){ cur++; }
+        else if(v==='skipped'){ continue; }
+        else { break; }
+      }
+
       return { current:cur, longest:best, total };
     }
 
