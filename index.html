@@ -150,7 +150,6 @@
     function mix(hex1, hex2, w){ const a=hexToRgb(hex1), b=hexToRgb(hex2); const r=Math.round(a.r*(1-w)+b.r*w), g=Math.round(a.g*(1-w)+b.g*w), b2=Math.round(a.b*(1-w)+b.b*w); return rgbToHex(r,g,b2); }
 
     function shadeForStreak(baseHex, theme, level){ // level 1..4
-      // weights closer to bg for low levels → appears lighter; decrease weight for darker as streak grows
       const wl = [0.82, 0.62, 0.42, 0.18];
       const wd = [0.55, 0.40, 0.28, 0.12];
       const w = (theme==='dark'? wd : wl)[Math.max(0, Math.min(3, level-1))];
@@ -210,9 +209,20 @@
       return (!raw && isWeekend(date) && h.autoSkipWeekends) ? 'skipped' : (raw || 'pending');
     }
 
+    function earliestConsideredDate(h){
+      const keys = Object.keys(h.entries);
+      if(keys.length){
+        const minKey = keys.reduce((a,b)=> a < b ? a : b);
+        return parse(minKey);
+      }
+      return parse(h.createdAt);
+    }
+
     // ===== Stats =====
     function stats(h){
-      const start = parse(h.createdAt); const end = today; let cur=0, best=0, total=0;
+      const start = earliestConsideredDate(h);
+      const end = today;
+      let cur=0, best=0, total=0;
       for(let d=startOfDay(start); d<=end; d=addDays(d,1)){
         const v = effective(h,d);
         if(v==='done'){ cur++; total++; if(cur>best) best=cur; }
@@ -220,6 +230,20 @@
         else { if(d<today) cur=0; }
       }
       return { current:cur, longest:best, total };
+    }
+
+    function carryStreakBefore(h, startDate){
+      // Count consecutive 'done' days immediately before startDate, skipping 'skipped'
+      let cur = 0;
+      const bound = earliestConsideredDate(h);
+      for(let d=addDays(startDate, -1); d>=bound; d=addDays(d, -1)){
+        const v = effective(h, d);
+        if(v==='done'){ cur++; continue; }
+        if(v==='skipped'){ continue; }
+        // failed or pending (historical) breaks
+        break;
+      }
+      return cur;
     }
 
     function updateTodayPill(el, h){
@@ -298,7 +322,6 @@
       };
       modal.querySelector('#m_delete').onclick = ()=>{ close(); deleteHabit(h.id); };
 
-      // focus
       setTimeout(()=> nameI.focus(), 0);
     }
 
@@ -330,7 +353,7 @@
       head.appendChild(datesWrap);
       elChain.appendChild(head);
 
-      // Habit rows (tight vertical spacing via row-gap:4px set above)
+      // Habit rows
       for(const h of currentHabits()){
         const row = document.createElement('div'); row.className='row'; row.style.gridTemplateColumns = gridCols;
 
@@ -348,7 +371,10 @@
 
         // cells
         const cells = document.createElement('div'); cells.className='cells'; cells.style.gridTemplateColumns = `repeat(${dates.length}, var(--cell-size))`;
-        let sinceBreak = 0; // counts done cells since last break
+
+        // Compute carry-over streak before the window so shading continues
+        let sinceBreak = carryStreakBefore(h, dates[0]);
+
         dates.forEach(d=>{
           const k = fmt(d); const weekend=isWeekend(d);
           const c = document.createElement('div'); c.className='cell';
@@ -399,7 +425,7 @@
     document.getElementById('nextDay').onclick = (e)=> shiftWindow(e.shiftKey ? +7 : +1);
     document.getElementById('todayBtn').onclick = ()=>{ state.ui.windowEndISO = fmt(today); save(state); render(); };
 
-    // Keyboard: arrows to move window, D/F/S to set today status for all habits? (keep per-row clicks for clarity)
+    // Keyboard: arrows to move window
     document.addEventListener('keydown', (e)=>{
       if(['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName)) return;
       if(e.key==='ArrowLeft') shiftWindow(e.shiftKey? -7 : -1);
