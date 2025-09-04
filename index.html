@@ -150,11 +150,13 @@
     function mix(hex1, hex2, w){ const a=hexToRgb(hex1), b=hexToRgb(hex2); const r=Math.round(a.r*(1-w)+b.r*w), g=Math.round(a.g*(1-w)+b.g*w), b2=Math.round(a.b*(1-w)+b.b*w); return rgbToHex(r,g,b2); }
 
     function shadeForStreak(baseHex, theme, level){ // level 1..4
-      const wl = [0.82, 0.62, 0.42, 0.18];
-      const wd = [0.55, 0.40, 0.28, 0.12];
-      const w = (theme==='dark'? wd : wl)[Math.max(0, Math.min(3, level-1))];
-      const bg = theme==='dark'? '#0f1020' : '#ffffff';
-      return mix(baseHex, bg, w);
+      // Level 1 = the habit's exact color. Higher levels darken progressively.
+      // We darken by mixing toward black. Slightly gentler curve in dark theme.
+      const wLight = [0.00, 0.14, 0.28, 0.42];
+      const wDark  = [0.00, 0.10, 0.22, 0.34];
+      const i = Math.max(1, Math.min(4, level)) - 1;
+      const w = (theme==='dark' ? wDark : wLight)[i];
+      return mix(baseHex, '#000000', w);
     }
 
     // ===== Storage =====
