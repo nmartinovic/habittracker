@@ -13,8 +13,8 @@
       --panel-2: #fbfcff;
       --text: #0f172a;
       --muted: #64748b;
-      --accent: #6b8cff; /* per-habit accent shades still apply around cells */
-      --grid-gap: 6px;
+      --accent: #6b8cff; /* for generic buttons */
+      --grid-gap: 8px;
       --radius: 12px;
       --shadow: 0 10px 26px rgba(2,6,23,0.08);
 
@@ -55,27 +55,26 @@
     html[data-theme="dark"] .btn{ border-color: rgba(255,255,255,0.14) }
     .btn:hover{ border-color: rgba(2,6,23,0.25) }
     .btn.primary{ background: var(--accent); border-color: var(--accent); color:white; box-shadow: 0 6px 18px rgba(107,140,255,0.35)}
-    .seg{ display:flex; gap:6px; align-items:center }
+    .seg{ display:flex; gap:6px; align-items:center; flex-wrap:wrap }
     .muted{ color: var(--muted) }
-    .switch{ display:inline-flex; align-items:center; gap:8px }
 
     /* Chain grid */
-    .chain-shell{ overflow-x:auto; overflow-y:visible; padding:8px; }
+    .chain-shell{ overflow-x:auto; overflow-y:visible; padding:10px; }
     .chain{ display:grid; grid-auto-rows: max-content; gap:8px }
-    .sticky-col{ position:sticky; left:0; z-index:2; background: linear-gradient(180deg, var(--sticky), rgba(0,0,0,0)); border-right:1px solid rgba(2,6,23,0.06) }
+    .sticky-col{ position:sticky; left:0; z-index:2; background: var(--sticky); border-right:1px solid rgba(2,6,23,0.06) }
 
     .head{ display:grid; align-items:end; gap: var(--grid-gap); }
     .head .label{ position:sticky; left:0; padding:10px 12px; border-radius:12px; background: var(--sticky); font-weight:700; z-index:3; }
 
     .dates{ display:grid; gap: var(--grid-gap); }
     .date-cell{ width: var(--cell-size); height: 20px; text-align:center; font-size:11px; color: var(--muted) }
-    .date-cell.today{ font-weight:800; color: var(--text) }
+    .date-cell.today{ font-weight:800 }
 
     .row{ display:grid; gap: var(--grid-gap); align-items:center }
-    .habit-sticky{ display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:12px; box-shadow: inset 0 0 0 1px rgba(2,6,23,0.06) }
+    .habit-sticky{ display:grid; grid-template-columns: 12px minmax(80px, 1fr) max-content max-content auto; align-items:center; column-gap:10px; padding:8px 12px; border-radius:12px; box-shadow: inset 0 0 0 1px rgba(2,6,23,0.06); overflow:hidden }
     .swatch{ width:12px; height:12px; border-radius:4px; border:1px solid rgba(0,0,0,0.15) }
-    .habit-name{ font-weight:700 }
-    .tiny{ font-size:11px; color: var(--muted) }
+    .habit-name{ font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+    .tiny{ font-size:11px; color: var(--muted); white-space:nowrap }
 
     .cells{ display:grid; gap: var(--grid-gap); }
     .cell{ width: var(--cell-size); height: var(--cell-size); border-radius:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; border:1px solid rgba(2,6,23,0.06); transition: transform 120ms ease, box-shadow 120ms ease; background: var(--pending); }
@@ -84,17 +83,21 @@
     .cell.state-failed{ background: var(--failed); color:white; border-color: rgba(0,0,0,0.15) }
     .cell.state-skipped{ background: var(--skipped); color:#1f2937; border-color: rgba(0,0,0,0.1) }
 
-    .edit{ margin-top:6px; display:none; }
-    .row.open .edit{ display:block }
-    .edit .form{ display:flex; flex-wrap:wrap; gap:8px; margin-left:12px }
-    input[type="text"], select{ padding:6px 8px; border-radius:8px; background:#fff; color:var(--text); border:1px solid rgba(2,6,23,0.12) }
-    html[data-theme="dark"] input[type="text"], html[data-theme="dark"] select{ background:#0d0f22; color:var(--text); border-color: rgba(255,255,255,0.14) }
+    /* Today status pill */
+    .pill{ font-size:11px; padding:4px 8px; border-radius:999px; border:1px solid rgba(2,6,23,0.08); white-space:nowrap }
+    .pill.done{ background: #d6f5e3; color:#065f46; }
+    .pill.failed{ background: #fee2e2; color:#991b1b; }
+    .pill.skipped{ background: #e2e8f0; color:#334155; }
+    .pill.pending{ background: #eef2ff; color:#363a78; }
+    html[data-theme="dark"] .pill.done{ background: #124f3c; color:#d1fae5; border-color: rgba(255,255,255,0.1) }
+    html[data-theme="dark"] .pill.failed{ background: #5c1a1a; color:#fecaca; border-color: rgba(255,255,255,0.1) }
+    html[data-theme="dark"] .pill.skipped{ background: #303645; color:#e2e8f0; border-color: rgba(255,255,255,0.1) }
+    html[data-theme="dark"] .pill.pending{ background: #1c214a; color:#dbe4ff; border-color: rgba(255,255,255,0.1) }
 
     .footer{ padding:10px 12px; color: var(--muted); font-size:12px }
 
-    @media (max-width: 700px){
-      .habit-sticky{ padding:6px 8px }
-      .habit-name{ font-size:13px }
+    @media (max-width: 780px){
+      .habit-sticky{ grid-template-columns: 12px 1fr auto; row-gap:6px }
       .tiny{ display:none }
     }
   </style>
@@ -116,10 +119,7 @@
         <button data-range="180" class="btn range">180d</button>
         <button data-range="365" class="btn range">365d</button>
         <button id="jumpToday" class="btn">Today</button>
-        <span class="switch">
-          <span class="muted">Theme</span>
-          <button id="themeToggle" class="btn">Light ↔ Dark</button>
-        </span>
+        <button id="themeToggle" class="btn">Light ↔ Dark</button>
       </div>
     </header>
 
@@ -136,6 +136,23 @@
     const startOfDay = (d)=> new Date(d.getFullYear(), d.getMonth(), d.getDate());
     const addDays = (d,n)=> new Date(d.getFullYear(), d.getMonth(), d.getDate()+n);
     const isWeekend = (d)=>{ const g=d.getDay(); return g===0 || g===6; };
+
+    // Color helpers
+    function hexToRgb(hex){ const m=hex.replace('#',''); const v=parseInt(m.length===3? m.split('').map(c=>c+c).join('') : m, 16); return {r:(v>>16)&255,g:(v>>8)&255,b:v&255}; }
+    function rgbToHex(r,g,b){ return '#'+[r,g,b].map(x=> x.toString(16).padStart(2,'0')).join(''); }
+    function mix(hex1, hex2, w){ const a=hexToRgb(hex1), b=hexToRgb(hex2); const r=Math.round(a.r*(1-w)+b.r*w), g=Math.round(a.g*(1-w)+b.g*w), b2=Math.round(a.b*(1-w)+b.b*w); return rgbToHex(r,g,b2); }
+
+    // Streak shading palette for 'done'
+    const BASE_DONE = '#22c55e';
+    const BG_LIGHT = '#ffffff';
+    const BG_DARK = '#0f1020';
+    function shadeForStreak(level, theme){ // level 1..4
+      const wl = [0.82, 0.62, 0.42, 0.18];
+      const wd = [0.45, 0.30, 0.18, 0.05];
+      const w = (theme==='dark'? wd : wl)[Math.max(0, Math.min(3, level-1))];
+      const bg = theme==='dark'? BG_DARK : BG_LIGHT;
+      return mix(BASE_DONE, bg, w);
+    }
 
     // ===== Storage =====
     const KEY='habitTracker_v1';
@@ -198,6 +215,15 @@
       return { current:cur, longest:best, total };
     }
 
+    function updateTodayPill(el, h){
+      const v = effective(h, today);
+      el.className = 'pill '+v;
+      const label = v.charAt(0).toUpperCase()+v.slice(1);
+      el.textContent = `Today: ${label}`;
+      el.title = 'Click to cycle status for today';
+      el.onclick = ()=>{ cycle(h, fmt(today), isWeekend(today)); render(); };
+    }
+
     // ===== Render Chain =====
     function render(){
       document.documentElement.setAttribute('data-theme', state.ui.theme);
@@ -205,8 +231,8 @@
       const n = state.ui.chainDays;
       const dates = Array.from({length:n}, (_,i)=> addDays(today, -(n-1-i)) );
 
-      // Build grid template columns: sticky 260px + n cells
-      const stickyW = 260;
+      // Grid columns: sticky + n cells
+      const stickyW = 320; // wider to avoid overlap with first cell
       const gridCols = `${stickyW}px repeat(${n}, var(--cell-size))`;
 
       elChain.innerHTML='';
@@ -234,6 +260,7 @@
         const sticky = document.createElement('div'); sticky.className='habit-sticky sticky-col';
         const sw = document.createElement('div'); sw.className='swatch'; sw.style.background = h.color; sticky.appendChild(sw);
         const name = document.createElement('div'); name.className='habit-name'; name.textContent = h.name; sticky.appendChild(name);
+        const todayPill = document.createElement('span'); todayPill.className='pill'; updateTodayPill(todayPill, h); sticky.appendChild(todayPill);
         const st = stats(h);
         const tiny = document.createElement('div'); tiny.className='tiny'; tiny.textContent = `🔥 ${st.current}  •  ⭐ ${st.longest}  •  ✓ ${st.total}`; sticky.appendChild(tiny);
         const menu = document.createElement('button'); menu.className='btn'; menu.style.marginLeft='auto'; menu.textContent='⋯';
@@ -243,14 +270,26 @@
 
         // cells
         const cells = document.createElement('div'); cells.className='cells'; cells.style.gridTemplateColumns = `repeat(${n}, var(--cell-size))`;
+        let sinceBreak = 0; // counts done cells since last break (failed/past-pending). Skips don't reset.
         dates.forEach(d=>{
           const k = fmt(d); const weekend=isWeekend(d);
           const c = document.createElement('div'); c.className='cell';
           const eff = effective(h,d);
           c.classList.add('state-'+eff);
+
+          // streak shading for DONE cells
+          if(eff==='done'){
+            sinceBreak += 1; const level = Math.min(4, sinceBreak);
+            c.style.background = shadeForStreak(level, state.ui.theme);
+          } else if(eff==='skipped'){
+            // do nothing, streak continues
+          } else if((eff==='failed') || (eff==='pending' && d < today)){
+            sinceBreak = 0;
+          }
+
           c.title = `${k} — ${eff}` + (eff==='skipped' && weekend && !h.entries[k] ? ' (auto)' : '');
           c.onclick = ()=>{ cycle(h,k,weekend); render(); };
-          // Accent outline per habit color
+          // Habit accent outline
           c.style.outline = `1px solid ${hexToRgba(h.color, 0.25)}`;
           c.style.outlineOffset = '-1px';
           cells.appendChild(c);
@@ -310,22 +349,21 @@
     function hexToRgba(hex, alpha){ const m=hex.replace('#',''); const v=parseInt(m.length===3? m.split('').map(c=>c+c).join('') : m, 16); const r=(v>>16)&255, g=(v>>8)&255, b=v&255; return `rgba(${r}, ${g}, ${b}, ${alpha})`; }
 
     // Events
-    elNew.onclick = addHabit;
-    elExport.onclick = ()=>{
+    document.getElementById('newHabit').onclick = addHabit;
+    document.getElementById('exportAll').onclick = ()=>{
       const data = JSON.stringify(state, null, 2);
       const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([data], {type:'application/json'})); a.download = 'habit-tracker-backup.json'; a.click(); URL.revokeObjectURL(a.href);
     };
-    elImport.onchange = (e)=>{
+    document.getElementById('importAll').onchange = (e)=>{
       const f = e.target.files?.[0]; if(!f) return; const r = new FileReader();
       r.onload = ()=>{ try{ state = JSON.parse(r.result); if(!state.ui) state.ui={chainDays:90, theme:'light'}; save(state); render(); alert('Imported.'); }catch{ alert('Invalid JSON'); } };
       r.readAsText(f);
     };
 
-    elTheme.onclick = ()=>{ state.ui.theme = (state.ui.theme==='light'?'dark':'light'); save(state); render(); };
+    document.getElementById('themeToggle').onclick = ()=>{ state.ui.theme = (state.ui.theme==='light'?'dark':'light'); save(state); render(); };
     rangeBtns.forEach(b=> b.onclick = ()=>{ state.ui.chainDays = Number(b.dataset.range); save(state); render(); });
 
-    elJump.onclick = ()=>{
-      // scroll so that today column is near center
+    document.getElementById('jumpToday').onclick = ()=>{
       const shell = document.querySelector('.chain-shell');
       const todayCells = shell.querySelectorAll('.date-cell.today');
       if(todayCells.length){ const rect = todayCells[0].getBoundingClientRect(); const shellRect = shell.getBoundingClientRect(); shell.scrollLeft += (rect.left - shellRect.left) - shellRect.width/2 + rect.width; }
