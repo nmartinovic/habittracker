@@ -110,6 +110,13 @@
     .modal-actions{ display:flex; gap:8px; justify-content:flex-end; margin-top:8px }
     .btn.danger{ border-color:#ef4444; color:#ef4444 }
     .btn.danger:hover{ background:#fee2e2 }
+
+    /* Context menu */
+    .ctx-menu{ position:fixed; top:0; left:0; background:var(--panel); color:var(--text); border:1px solid rgba(2,6,23,0.12); border-radius:12px; box-shadow: var(--shadow); min-width:180px; padding:4px; z-index:60 }
+    html[data-theme="dark"] .ctx-menu{ border-color: rgba(255,255,255,0.14) }
+    .ctx-item{ padding:8px 10px; border-radius:8px; cursor:pointer; font-weight:600 }
+    .ctx-item:hover{ background: rgba(2,6,23,0.06) }
+    html[data-theme="dark"] .ctx-item:hover{ background: rgba(255,255,255,0.08) }
   </style>
 </head>
 <body>
@@ -132,7 +139,7 @@
 
     <section class="card chain-shell">
       <div id="chain" class="chain"></div>
-      <div class="footer">All habits visible. Click cells to cycle: pending → done → failed → skipped → (clear). Weekends auto-skip if enabled per habit. Data stored locally.</div>
+      <div class="footer">Right‑click a cell for a quick menu. All habits visible. Click cells to cycle: pending → done → failed → skipped → (clear). Weekends auto-skip if enabled per habit. Data stored locally.</div>
     </section>
   </div>
 
@@ -151,7 +158,6 @@
 
     function shadeForStreak(baseHex, theme, level){ // level 1..4
       // Level 1 = the habit's exact color. Higher levels darken progressively.
-      // We darken by mixing toward black. Slightly gentler curve in dark theme.
       const wLight = [0.00, 0.14, 0.28, 0.42];
       const wDark  = [0.00, 0.10, 0.22, 0.34];
       const i = Math.max(1, Math.min(4, level)) - 1;
@@ -182,15 +188,6 @@
 
     // ===== Elements =====
     const elChain = document.getElementById('chain');
-    const elNew = document.getElementById('newHabit');
-    const elExport = document.getElementById('exportAll');
-    const elImport = document.getElementById('importAll');
-    const elTheme = document.getElementById('themeToggle');
-
-    // Window nav
-    const elPrev = document.getElementById('prevDay');
-    const elNext = document.getElementById('nextDay');
-    const elToday = document.getElementById('todayBtn');
 
     // ===== Habit helpers =====
     function currentHabits(){ return state.habits; }
@@ -269,7 +266,7 @@
       const label = v.charAt(0).toUpperCase()+v.slice(1);
       el.textContent = `Today: ${label}`;
       el.title = 'Click to cycle status for today';
-      el.onclick = ()=>{ cycle(h, fmt(today), isWeekend(today)); render(); };
+      el.onclick = ()=>{ setEntry(h, fmt(today), v==='done'?'failed':'done'); /* quick toggle done/failed */ render(); };
     }
 
     // ===== Window helpers =====
@@ -342,6 +339,51 @@
       setTimeout(()=> nameI.focus(), 0);
     }
 
+    // ===== Context Menu =====
+    let ctxMenuEl = null;
+    function closeContextMenu(){ if(ctxMenuEl){ ctxMenuEl.remove(); ctxMenuEl=null; } }
+    function openContextMenu(h, key, weekend, clientX, clientY){
+      closeContextMenu();
+      const menu = document.createElement('div');
+      menu.className = 'ctx-menu';
+
+      const entries = [
+        { label:'Complete', value:'done' },
+        { label:'Skip', value:'skipped' },
+        { label:'Fail', value:'failed' }
+      ];
+      for(const it of entries){
+        const btn = document.createElement('div');
+        btn.className = 'ctx-item';
+        btn.textContent = it.label;
+        btn.onclick = ()=>{ setEntry(h, key, it.value); closeContextMenu(); render(); };
+        menu.appendChild(btn);
+      }
+
+      document.body.appendChild(menu);
+      // Position within viewport
+      const pad = 8;
+      let x = clientX, y = clientY;
+      const w = menu.offsetWidth, hgt = menu.offsetHeight;
+      if(x + w > window.innerWidth - pad) x = window.innerWidth - w - pad;
+      if(y + hgt > window.innerHeight - pad) y = window.innerHeight - hgt - pad;
+      menu.style.left = Math.max(pad, x) + 'px';
+      menu.style.top = Math.max(pad, y) + 'px';
+
+      // Close interactions
+      setTimeout(()=>{
+        const closer = (e)=>{ if(!menu.contains(e.target)) closeContextMenu(); };
+        const esc = (e)=>{ if(e.key==='Escape') { closeContextMenu(); document.removeEventListener('keydown', esc, true); } };
+        document.addEventListener('mousedown', closer, { once:true, capture:true });
+        document.addEventListener('contextmenu', closer, { once:true, capture:true });
+        document.addEventListener('keydown', esc, true);
+        window.addEventListener('resize', closeContextMenu, { once:true });
+        window.addEventListener('scroll', closeContextMenu, { once:true, capture:true });
+      }, 0);
+
+      ctxMenuEl = menu;
+    }
+
     // ===== Render Chain =====
     function render(){
       document.documentElement.setAttribute('data-theme', state.ui.theme);
@@ -381,9 +423,9 @@
         const todayPill = document.createElement('span'); todayPill.className='pill'; updateTodayPill(todayPill, h); sticky.appendChild(todayPill);
         const st = stats(h);
         const tiny = document.createElement('div'); tiny.className='tiny'; tiny.textContent = `🔥 ${st.current}  •  ⭐ ${st.longest}  •  ✓ ${st.total}`; sticky.appendChild(tiny);
-        const menu = document.createElement('button'); menu.className='btn'; menu.style.marginLeft='auto'; menu.textContent='⋯';
-        menu.onclick = ()=> openHabitModal(h);
-        sticky.appendChild(menu);
+        const menuBtn = document.createElement('button'); menuBtn.className='btn'; menuBtn.style.marginLeft='auto'; menuBtn.textContent='⋯';
+        menuBtn.onclick = ()=> openHabitModal(h);
+        sticky.appendChild(menuBtn);
         row.appendChild(sticky);
 
         // cells
@@ -415,6 +457,7 @@
 
           c.title = `${k} — ${eff}` + (eff==='skipped' && weekend && !h.entries[k] ? ' (auto)' : '');
           c.onclick = ()=>{ cycle(h,k,weekend); render(); };
+          c.oncontextmenu = (ev)=>{ ev.preventDefault(); ev.stopPropagation(); openContextMenu(h, k, weekend, ev.clientX, ev.clientY); };
           // Habit accent outline
           c.style.outline = `1px solid ${hexToRgba(h.color, 0.25)}`;
           c.style.outlineOffset = '-1px';
