@@ -78,7 +78,7 @@
     .cell{ width: var(--cell-size); height: var(--cell-size); border-radius:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; border:1px solid rgba(2,6,23,0.06); transition: transform 120ms ease, box-shadow 120ms ease; background: var(--pending); }
     .cell:hover{ transform: translateY(-1px); box-shadow: 0 6px 14px rgba(2,6,23,0.15) }
     .cell.state-failed{ background: var(--failed); color:white; border-color: rgba(0,0,0,0.15) }
-    .cell.state-skipped{ background: var(--skipped); color:#1f2937; border-color: rgba(0,0,0,0.1) }
+    .cell.state-skipped{ background: var(--skipped); color:#1f2937; border:2px solid #000 !important; }
 
     /* Today status pill */
     .pill{ font-size:11px; padding:4px 8px; border-radius:999px; border:1px solid rgba(2,6,23,0.08); white-space:nowrap }
