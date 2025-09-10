@@ -186,6 +186,10 @@
 
     document.documentElement.setAttribute('data-theme', state.ui.theme);
 
+    // Always show the current day as the last box on load
+    state.ui.windowEndISO = fmt(today);
+    save(state);
+
     // ===== Elements =====
     const elChain = document.getElementById('chain');
 
@@ -277,7 +281,10 @@
     }
     function shiftWindow(deltaDays){
       const end = parse(state.ui.windowEndISO);
-      state.ui.windowEndISO = fmt(addDays(end, deltaDays));
+      let nextEnd = addDays(end, deltaDays);
+      // Do not allow the window to extend beyond today
+      if(nextEnd > today) nextEnd = today;
+      state.ui.windowEndISO = fmt(nextEnd);
       save(state); render();
     }
 
