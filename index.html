@@ -282,9 +282,7 @@
     }
     function shiftWindow(deltaDays){
       const end = parse(state.ui.windowEndISO);
-      let nextEnd = addDays(end, deltaDays);
-      // Do not allow the window to extend beyond today
-      if(nextEnd > today) nextEnd = today;
+      const nextEnd = addDays(end, deltaDays);
       state.ui.windowEndISO = fmt(nextEnd);
       save(state); render();
     }
